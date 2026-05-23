@@ -16,6 +16,19 @@ K2THINK_BASE_URL = "https://api.k2think.ai/v1"
 MOCK_KEYS = {"", "sk-REPLACE_ME", "sk-openai-mock"}
 
 
+# Strip chain-of-thought reasoning blocks from model output.
+# Reasoning models (K2Think, o1, etc.) wrap internal thinking in <think>...</think>.
+# K2Think sometimes omits the opening tag — strip everything before </think> in that case.
+def _strip_reasoning(text: str) -> str:
+    import re
+    # Case 1: full <think>...</think> block present — remove it.
+    cleaned = re.sub(r"<think>.*?</think>", "", text, flags=re.DOTALL)
+    # Case 2: closing </think> present without opening tag — everything before it is reasoning.
+    if "</think>" in cleaned:
+        cleaned = cleaned.split("</think>", 1)[-1]
+    return cleaned.strip()
+
+
 # Return True when K2 Think V2 API is configured via K2THINK_API_KEY.
 def k2think_configured() -> bool:
     key = os.getenv("K2THINK_API_KEY", "")
@@ -108,9 +121,11 @@ def call_openai(
                 print(f"[Gemini] error, falling back to K2Think: {exc}")
 
     # K2Think / OpenAI fallback path.
+    # Always use the correct K2Think model name regardless of what was requested.
+    k2think_model = os.getenv("K2THINK_MODEL") or K2THINK_DEFAULT_MODEL
     client = _make_openai_client()
     kwargs: dict[str, Any] = {
-        "model": resolved_model,
+        "model": k2think_model if k2think_configured() else resolved_model,
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": prompt},
@@ -138,6 +153,9 @@ def call_openai(
         content = getattr(choices[0].message, "content", None)
         if not content:
             raise RuntimeError("LLM response contained no message content.")
+        # Strip chain-of-thought reasoning block emitted by reasoning models (e.g. K2Think).
+        # Everything inside <think>...</think> is internal reasoning — only the text after is the answer.
+        content = _strip_reasoning(content)
         span.response_len = len(content)
         return content
 
