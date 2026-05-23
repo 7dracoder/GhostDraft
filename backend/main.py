@@ -132,6 +132,10 @@ def _append_audit(entry: AuditLogEntry, record: dict[str, Any]) -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     skip_local = os.environ.get("NGSP_SKIP_LOCAL_MODEL", "0") == "1"
 
+    # Initialise ClickHouse (non-fatal if not configured).
+    from backend.integrations.clickhouse import init_clickhouse
+    init_clickhouse()
+
     # Construct local model (may be skipped for fast test starts).
     local_model: Any = None
     if not skip_local:
@@ -595,6 +599,9 @@ async def api_complete(req: CompleteRequest) -> CompleteResponse:
             "canary_token": canary_match.group(0),
         }
         _append_audit(entry, record)
+        # Alert Datadog on canary leak — this is a critical privacy event.
+        from backend.integrations.datadog import send_privacy_event
+        send_privacy_event("canary_leak", {"audit_id": audit_id, "token": canary_match.group(0)})
         from fastapi import HTTPException
         raise HTTPException(
             status_code=400,
@@ -641,6 +648,18 @@ async def api_complete(req: CompleteRequest) -> CompleteResponse:
         "status": "ok",
     }
     _append_audit(entry, record)
+
+    # Persist to ClickHouse and send privacy event to Datadog if canary blocked.
+    from backend.integrations.clickhouse import insert_audit_record
+    insert_audit_record(
+        request_id=audit_id,
+        kind="complete",
+        route=route_path,
+        model=req.model or "k2thinkv2",
+        entities_count=entities_count,
+        status="ok",
+        blocked=False,
+    )
 
     return CompleteResponse(
         routing=RoutingInfo(path=route_path, rationale=route_rationale),
