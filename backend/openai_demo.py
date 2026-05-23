@@ -1,4 +1,4 @@
-# LLM dispatch layer — routes calls to K2Think, Gemini, or OpenAI.
+# LLM dispatch layer — routes calls to Gemini (primary), Claude Opus, or OpenAI.
 # Wraps every call with Datadog tracing and Senso knowledge-base enrichment.
 from __future__ import annotations
 
@@ -22,12 +22,12 @@ def k2think_configured() -> bool:
     return bool(key and not key.startswith("IFM-REPLACE"))
 
 
-# Return True when a real OpenAI API key is present (not a mock/placeholder).
+# Return True when any real LLM key is present.
 def openai_configured() -> bool:
-    if k2think_configured():
-        return True
     from backend.integrations.gemini import gemini_configured
     if gemini_configured():
+        return True
+    if k2think_configured():
         return True
     key = os.getenv("OPENAI_API_KEY", "")
     return key not in MOCK_KEYS
@@ -35,8 +35,12 @@ def openai_configured() -> bool:
 
 # Resolve the model name for a given task and optional requested model.
 def model_for(task: str, requested: str | None = None) -> str:
-    # Explicit gemini-2 request — use Gemini regardless of other keys.
+    from backend.integrations.gemini import gemini_configured
+    # Explicit gemini-2 request — always use Gemini.
     if requested == "gemini-2":
+        return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+    # Gemini is primary when configured.
+    if gemini_configured():
         return os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
     if k2think_configured():
         return os.getenv("K2THINK_MODEL") or K2THINK_DEFAULT_MODEL
@@ -80,20 +84,17 @@ def call_openai(
     resolved_model = model_for(task, requested_model)
 
     # Datadog tracing wrapper.
-    from backend.integrations.datadog import LLMSpan, datadog_configured
+    from backend.integrations.datadog import LLMSpan
 
-    # Route to Gemini if explicitly requested or if it's the only key available.
-    if requested_model == "gemini-2" or (
-        not k2think_configured() and not os.getenv("OPENAI_API_KEY", "") not in MOCK_KEYS
-    ):
-        from backend.integrations.gemini import call_gemini, gemini_configured
-        if gemini_configured():
-            with LLMSpan(task=task, model=resolved_model, prompt_len=len(prompt)) as span:
-                result = call_gemini(prompt, system, max_tokens=max_tokens, json_mode=json_mode)
-                span.response_len = len(result)
-                return result
+    # Route to Gemini if it's configured (primary) or explicitly requested.
+    from backend.integrations.gemini import call_gemini, gemini_configured
+    if gemini_configured() or requested_model == "gemini-2":
+        with LLMSpan(task=task, model=resolved_model, prompt_len=len(prompt)) as span:
+            result = call_gemini(prompt, system, max_tokens=max_tokens, json_mode=json_mode)
+            span.response_len = len(result)
+            return result
 
-    # K2Think / OpenAI path.
+    # K2Think / OpenAI fallback path.
     client = _make_openai_client()
     kwargs: dict[str, Any] = {
         "model": resolved_model,

@@ -235,6 +235,10 @@ async def assemble_timeline(
         f"possible, unlikely, unassessable. Provide a brief rationale."
     )
 
+    # Parse sex and site for the cloud prompt (safe — no raw IDs sent, only placeholders).
+    sex_match = _SEX_RE.search(req.document)
+    site_match = _SITE_RE.search(req.document)
+
     if openai_configured():
         dates_summary = ", ".join(str(day) for day in days[:6]) or "14"
         system = (
