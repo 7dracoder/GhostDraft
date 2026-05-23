@@ -1,0 +1,68 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+
+# venvs
+.venv/
+venv/
+env/
+
+# model weights — large, never committed
+models/
+*.safetensors
+*.gguf
+*.bin
+*.pt
+*.pth
+.claude/
+
+# raw experiment artifacts — reproducible from code, never committed raw
+experiments/results/raw/
+experiments/results/cache/
+
+# notebook / editor cruft
+.ipynb_checkpoints/
+.vscode/
+.idea/
+.DS_Store
+
+# logs
+*.log
+audit.jsonl
+
+# product build — frontend (node / Vite)
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/.env*
+!frontend/.env.example
+.context-compass/
+.mcp.json
+
+# internal planning / AI tooling docs — not for public repo
+CLAUDE.md
+FINALIZE_PLAN.md
+new-prompt.md
+prompt.md
+cc.md
+test-campaign.md
+product-build/
+docs/plan-phases-5-7.md
+docs/pitch-deck-outline.md
+docs/test-campaign.md
+.hallmark/

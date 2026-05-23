@@ -1,0 +1,380 @@
+/* GhostDraft design system — Terminal theme
+ * Phosphor-green accent · JetBrains Mono · IBM Plex Serif · OKLCH tokens
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300..900;1,14..32,300..900&family=JetBrains+Mono:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Serif:ital,wght@0,300;0,400;1,300;1,400&display=swap');
+@import "tailwindcss";
+
+/* ── Token system ─────────────────────────────────────────────────────────── */
+:root {
+  /* Fonts */
+  --font-sans:    "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono:    "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-serif:   "IBM Plex Serif", ui-serif, Georgia, serif;
+
+  /* Paper — near-black with a cool blue-grey cast */
+  --color-paper:          oklch(9% 0.008 240);
+  --color-paper-1:        oklch(11% 0.009 240);
+  --color-paper-2:        oklch(13% 0.010 240);
+  --color-paper-3:        oklch(16% 0.011 240);
+  --color-paper-4:        oklch(19% 0.012 240);
+  --color-paper-5:        oklch(23% 0.013 240);
+
+  /* Ink — text hierarchy */
+  --color-ink:            oklch(88% 0.006 240);
+  --color-ink-2:          oklch(72% 0.007 240);
+  --color-ink-3:          oklch(52% 0.008 240);
+  --color-ink-4:          oklch(36% 0.008 240);
+  --color-ink-5:          oklch(26% 0.008 240);
+
+  /* Accent — phosphor green (Terminal theme) */
+  --color-accent:         oklch(72% 0.18 145);
+  --color-accent-dim:     oklch(55% 0.14 145);
+  --color-accent-glow:    oklch(72% 0.18 145 / 0.15);
+  --color-accent-border:  oklch(72% 0.18 145 / 0.25);
+
+  /* Semantic entity colours */
+  --color-phi:            oklch(72% 0.12 38);   /* warm amber */
+  --color-ip:             oklch(72% 0.14 220);  /* cool blue  */
+  --color-mnpi:           oklch(82% 0.10 95);   /* pale gold  */
+  --color-error:          oklch(65% 0.18 22);   /* red        */
+  --color-warning:        oklch(78% 0.14 75);   /* amber      */
+
+  /* Borders */
+  --color-border:         oklch(100% 0 0 / 0.06);
+  --color-border-strong:  oklch(100% 0 0 / 0.10);
+  --color-border-focus:   oklch(72% 0.18 145 / 0.65);
+
+  /* Spacing — 4pt scale */
+  --space-1:  4px;
+  --space-2:  8px;
+  --space-3:  12px;
+  --space-4:  16px;
+  --space-5:  20px;
+  --space-6:  24px;
+  --space-8:  32px;
+  --space-10: 40px;
+  --space-12: 48px;
+
+  /* Type scale */
+  --text-xs:   10px;
+  --text-sm:   11px;
+  --text-base: 13px;
+  --text-md:   14px;
+  --text-lg:   16px;
+  --text-xl:   20px;
+
+  /* Motion */
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   320ms;
+  --ease-out:   cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in:    cubic-bezier(0.4, 0, 1, 1);
+  --ease-inout: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Radius */
+  --radius-sm:  4px;
+  --radius-md:  8px;
+  --radius-lg:  12px;
+  --radius-xl:  16px;
+  --radius-2xl: 20px;
+}
+
+/* ── Tailwind theme bridge ────────────────────────────────────────────────── */
+@theme {
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --color-surface:                   oklch(9% 0.008 240);
+  --color-surface-container-lowest:  oklch(11% 0.009 240);
+  --color-surface-container-low:     oklch(13% 0.010 240);
+  --color-surface-container-high:    oklch(16% 0.011 240);
+  --color-surface-container-highest: oklch(19% 0.012 240);
+
+  --color-primary-container: oklch(72% 0.18 145);
+  --color-primary-fixed:     oklch(82% 0.14 145);
+
+  --color-phi:      oklch(72% 0.12 38);
+  --color-ip:       oklch(72% 0.14 220);
+  --color-mnpi:     oklch(82% 0.10 95);
+  --color-tertiary: oklch(72% 0.18 145);
+  --color-error:    oklch(65% 0.18 22);
+
+  --color-vscode-border:    oklch(100% 0 0 / 0.08);
+  --color-vscode-selection: oklch(72% 0.18 145 / 0.18);
+}
+
+/* ── Base ─────────────────────────────────────────────────────────────────── */
+@layer base {
+  html, body {
+    overflow-x: clip;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    overflow: hidden;
+    font-feature-settings: "kern" 1, "liga" 1, "calt" 1, "ss01" 1;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* Subtle scanline texture — Terminal theme signature */
+    background-image:
+      repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        oklch(100% 0 0 / 0.008) 2px,
+        oklch(100% 0 0 / 0.008) 4px
+      ),
+      radial-gradient(ellipse 1400px 900px at 15% 10%, oklch(72% 0.18 145 / 0.04) 0%, transparent 55%),
+      radial-gradient(ellipse 800px 600px at 85% 85%, oklch(72% 0.14 220 / 0.03) 0%, transparent 55%);
+  }
+
+  ::selection {
+    background: oklch(72% 0.18 145 / 0.22);
+    color: oklch(95% 0.01 145);
+  }
+}
+
+/* ── App shell ────────────────────────────────────────────────────────────── */
+.app-shell {
+  position: relative;
+  background: var(--color-paper);
+}
+
+/* Enforce minimum touch target */
+.app-shell button {
+  min-height: 32px;
+}
+
+.app-shell button svg {
+  min-width: 14px;
+  min-height: 14px;
+}
+
+/* ── Surface system ───────────────────────────────────────────────────────── */
+.surface-header {
+  background: oklch(10% 0.009 240 / 0.95);
+  backdrop-filter: blur(24px) saturate(140%);
+  -webkit-backdrop-filter: blur(24px) saturate(140%);
+  box-shadow: inset 0 -1px 0 var(--color-border);
+}
+
+.surface-left {
+  background: linear-gradient(180deg, oklch(11.5% 0.009 240), oklch(10.5% 0.009 240));
+  box-shadow: inset -1px 0 0 var(--color-border);
+}
+
+.surface-main {
+  background: oklch(10% 0.008 240);
+}
+
+.surface-agent {
+  background: linear-gradient(180deg, oklch(11% 0.009 240), oklch(9.5% 0.008 240));
+  box-shadow:
+    0 24px 70px oklch(0% 0 0 / 0.5),
+    inset 0 1px 0 var(--color-border);
+}
+
+.surface-toolbar {
+  background: oklch(12% 0.009 240 / 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.surface-card {
+  background: linear-gradient(180deg, oklch(14% 0.010 240 / 0.92), oklch(12% 0.009 240 / 0.92));
+  border: 1px solid var(--color-border);
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.04),
+    0 16px 40px oklch(0% 0 0 / 0.25);
+}
+
+.surface-soft {
+  background: oklch(100% 0 0 / 0.03);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.03);
+}
+
+.surface-alert {
+  background: oklch(18% 0.08 22 / 0.75);
+  border: 1px solid oklch(65% 0.18 22 / 0.30);
+  box-shadow:
+    inset 0 1px 0 oklch(65% 0.18 22 / 0.12),
+    0 12px 44px oklch(0% 0 0 / 0.28);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.surface-dp {
+  background: oklch(16% 0.06 95 / 0.80);
+  border: 1px solid oklch(82% 0.10 95 / 0.22);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.04);
+}
+
+.surface-accent {
+  background: var(--color-accent-glow);
+  border: 1px solid var(--color-accent-border);
+  box-shadow:
+    inset 0 1px 0 oklch(72% 0.18 145 / 0.12),
+    0 10px 30px oklch(72% 0.18 145 / 0.10);
+}
+
+/* ── Glass system ─────────────────────────────────────────────────────────── */
+.glass,
+.glass-panel,
+.glass-sidebar {
+  background: linear-gradient(180deg, oklch(14% 0.010 240 / 0.92), oklch(12% 0.009 240 / 0.92));
+  border: 1px solid var(--color-border);
+  box-shadow:
+    inset 0 1px 0 oklch(100% 0 0 / 0.04),
+    0 16px 40px oklch(0% 0 0 / 0.25);
+}
+
+.glass-sm {
+  background: oklch(100% 0 0 / 0.03);
+  border: 1px solid var(--color-border);
+  box-shadow: inset 0 1px 0 oklch(100% 0 0 / 0.03);
+}
+
+.glass-warning {
+  background: oklch(18% 0.08 22 / 0.72);
+  border: 1px solid oklch(65% 0.18 22 / 0.28);
+}
+
+.glass-dp {
+  background: oklch(16% 0.06 95 / 0.78);
+  border: 1px solid oklch(82% 0.10 95 / 0.20);
+}
+
+.glass-blue {
+  background: oklch(72% 0.14 220 / 0.10);
+  border: 1px solid oklch(72% 0.14 220 / 0.22);
+}
+
+/* ── Resize handle ────────────────────────────────────────────────────────── */
+.resize-handle {
+  width: 6px;
+  flex-shrink: 0;
+  cursor: col-resize;
+  user-select: none;
+  background: linear-gradient(180deg, transparent, var(--color-border), transparent);
+  transition: background var(--dur-base) var(--ease-out), box-shadow var(--dur-base) var(--ease-out);
+  position: relative;
+}
+
+.resize-handle:hover {
+  background: oklch(72% 0.18 145 / 0.35);
+  box-shadow: 0 0 18px oklch(72% 0.18 145 / 0.18);
+}
+
+.resize-handle:active {
+  background: oklch(72% 0.18 145 / 0.55);
+  box-shadow: 0 0 24px oklch(72% 0.18 145 / 0.28);
+}
+
+/* ── Typography ───────────────────────────────────────────────────────────── */
+.doc-text {
+  font-family: var(--font-serif);
+  font-size: 15px;
+  line-height: 1.85;
+  font-feature-settings: "kern" 1, "liga" 1, "onum" 1;
+  color: var(--color-ink);
+  letter-spacing: 0.012em;
+}
+
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+}
+
+.label-caps {
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-3);
+}
+
+/* ── Scrollbar ────────────────────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: oklch(100% 0 0 / 0.08);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: oklch(72% 0.18 145 / 0.30);
+}
+
+/* ── Focus ────────────────────────────────────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-border-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
+
+/* ── Animated border ──────────────────────────────────────────────────────── */
+.animated-border {
+  position: relative;
+}
+
+.animated-border::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    120deg,
+    oklch(72% 0.18 145 / 0.28),
+    oklch(100% 0 0 / 0.04),
+    oklch(72% 0.14 220 / 0.20)
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ── Loading dots ─────────────────────────────────────────────────────────── */
+.loading-dots span {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: dot-pulse 1.4s var(--ease-inout) infinite;
+}
+.loading-dots span:nth-child(2) { animation-delay: 0.22s; }
+.loading-dots span:nth-child(3) { animation-delay: 0.44s; }
+
+@keyframes dot-pulse {
+  0%, 80%, 100% { transform: scale(0.5); opacity: 0.25; }
+  40%           { transform: scale(1);   opacity: 1; }
+}
+
+/* ── Phosphor glow — Terminal theme signature ─────────────────────────────── */
+.glow-accent {
+  text-shadow: 0 0 12px oklch(72% 0.18 145 / 0.55);
+}
+
+.glow-accent-border {
+  box-shadow: 0 0 0 1px var(--color-accent-border), 0 0 16px var(--color-accent-glow);
+}
+
+/* ── Utility ──────────────────────────────────────────────────────────────── */
+.razor-border { border: 1px solid var(--color-border); }
+.tabular       { font-variant-numeric: tabular-nums; }
+.chat-mode-shell { position: relative; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
