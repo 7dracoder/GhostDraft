@@ -78,7 +78,7 @@ Your document (with PHI, IP, MNPI)
   └─────────────────────────────────────────────────────┘
          │
          ▼
-  Cloud LLM (K2Think V2 / Gemini / OpenAI)
+  Cloud LLM (Claude Opus / Gemini / OpenAI)
          │
          ▼
   ┌─────────────────────────────────────────────────────┐
@@ -216,7 +216,7 @@ At the bottom of every screen is the forensic dock — a live audit trail of eve
 
 **Collapsed state** (always visible, 22px tall):
 ```
-14:32:07  ·  ok  ·  MBZUAI-IFM/K2-Think-v2  ·  ε 0.00 / 3.0  [████░░░░░░]
+14:32:07  ·  ok  ·  claude-opus-4  ·  ε 0.00 / 3.0  [████░░░░░░]
 ```
 
 **Expanded state** — three-column view:
@@ -260,11 +260,11 @@ Every workflow output has an export row with one-click actions:
 
 GhostDraft integrates six external services. All are optional — the app runs in mock mode without any API keys.
 
-### K2 Think V2 (IFM / MBZUAI)
+### Claude Opus
 The primary reasoning engine. A 70B open-weights model that handles all LLM tasks — causality assessment, dashboard generation, signal hypothesis, chat. Uses chain-of-thought reasoning. API-compatible with OpenAI SDK.
 
 ### Google Gemini 2.5 Flash (DeepMind)
-Secondary LLM option. Faster and cheaper than K2Think for tasks that don't require deep reasoning. Select it from the model picker in the Key Vault sidebar.
+Secondary LLM option. Faster and cheaper than Claude Opus for tasks that don't require deep reasoning. Select it from the model picker in the Key Vault sidebar.
 
 ### ClickHouse Cloud
 Every pipeline call writes an audit row to a real analytics database. Enables SQL queries over the full audit history — route distribution, entity counts over time, canary leak history, ε budget consumption per session.
@@ -317,7 +317,7 @@ frontend/          React + TypeScript + Vite + Tailwind v4
 
 backend/           FastAPI + Python
   main.py          Core endpoints: /analyze /proxy /route /complete /audit
-  openai_demo.py   LLM dispatch: K2Think → Gemini → OpenAI
+  openai_demo.py   LLM dispatch: Claude Opus → Gemini → OpenAI
   schemas.py       Pydantic models for all request/response types
   endpoints/
     timeline.py    /api/timeline/assemble
@@ -389,14 +389,14 @@ Run the full strip-and-proxy pipeline. Returns original text, proxy text, entity
 Classify a document into a routing path. Returns `abstract_extractable`, `dp_tolerant`, or `local_only` with a rationale.
 
 ### `POST /api/complete`
-Full pipeline: strip → route → LLM → rehydrate. Accepts `model: "k2thinkv2" | "gemini-2" | "gpt-5" | "claude-opus-4"`.
+Full pipeline: strip → route → LLM → rehydrate. Accepts `model: "claude-opus-4" | "gemini-2" | "gpt-5" | "claude-opus-4"`.
 
 ```json
 // Request
 {
   "document": "Subject 04-0023 received BMS-986253...",
   "prompt": "Summarize the adverse event.",
-  "model": "k2thinkv2"
+  "model": "claude-opus-4"
 }
 
 // Response
@@ -452,7 +452,7 @@ pip install -e ".[dev]"
 
 # Copy and fill in environment variables
 cp .env.example .env
-# Edit .env — at minimum set K2THINK_API_KEY
+# Edit .env — at minimum set ANTHROPIC_API_KEY
 
 # Frontend dependencies
 cd frontend
@@ -498,7 +498,7 @@ python experiments/calibrate_epsilon.py --epsilons 0.5,1.0,2.0,3.0,5.0
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `K2THINK_API_KEY` | Yes | Primary LLM — IFM API key (`IFM-...`) |
+| `ANTHROPIC_API_KEY` | Yes | Primary LLM — Anthropic API key (`sk-ant-...`) |
 | `GEMINI_API_KEY` | No | Google Gemini — enables `gemini-2` model option |
 | `CLICKHOUSE_HOST` | No | ClickHouse Cloud hostname for audit persistence |
 | `CLICKHOUSE_PASSWORD` | No | ClickHouse service password |

@@ -7,7 +7,7 @@ Complete technical reference for every external service integrated into GhostDra
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [K2 Think V2 (IFM / MBZUAI)](#1-k2-think-v2)
+2. [Claude Opus](#1-k2-think-v2)
 3. [Google Gemini (DeepMind)](#2-google-gemini)
 4. [ClickHouse Cloud](#3-clickhouse-cloud)
 5. [Datadog](#4-datadog)
@@ -33,8 +33,8 @@ User document
      ▼
 [Neural Router]  ← heuristic classification: abstract_extractable | dp_tolerant | local_only
      │
-     ├── abstract_extractable → [Senso KB enrichment] → [K2Think V2 / Gemini / OpenAI]
-     ├── dp_tolerant          → [Senso KB enrichment] → [K2Think V2 / Gemini / OpenAI]
+     ├── abstract_extractable → [Senso KB enrichment] → [Claude Opus / Gemini / OpenAI]
+     ├── dp_tolerant          → [Senso KB enrichment] → [Claude Opus / Gemini / OpenAI]
      └── local_only           → answered on-device, nothing sent to cloud
      │
      ▼
@@ -48,16 +48,16 @@ Auth and session persistence are handled by **Supabase**. The **Senso** knowledg
 
 ---
 
-## 1. K2 Think V2
+## 1. Claude Opus
 
-**Provider:** IFM / MBZUAI  
-**Model:** `MBZUAI-IFM/K2-Think-v2` (70B reasoning model)  
-**API:** OpenAI-compatible at `https://api.k2think.ai/v1`  
+**Provider:** Anthropic  
+**Model:** `claude-opus-4` (70B reasoning model)  
+**API:** OpenAI-compatible at `https://api.anthropic.com/v1`  
 **Default:** Yes — used for all LLM calls unless `gemini-2` is explicitly selected
 
 ### What it does
 
-K2 Think V2 is the primary reasoning engine. It handles:
+Claude Opus is the primary reasoning engine. It handles:
 - `/api/complete` — full pipeline: proxy → route → LLM → rehydrate
 - `/api/timeline/assemble` — SAE causality reasoning and timeline JSON generation
 - `/api/signal/cluster` — AE cluster hypothesis generation
@@ -65,26 +65,26 @@ K2 Think V2 is the primary reasoning engine. It handles:
 
 ### How it is wired
 
-`backend/openai_demo.py` → `_make_openai_client()` creates an `openai.OpenAI` instance pointed at `https://api.k2think.ai/v1` with the `K2THINK_API_KEY`. The model name is resolved by `model_for()`.
+`backend/openai_demo.py` → `_make_openai_client()` creates an `openai.OpenAI` instance pointed at `https://api.anthropic.com/v1` with the `ANTHROPIC_API_KEY`. The model name is resolved by `model_for()`.
 
 ```python
 # backend/openai_demo.py
 client = OpenAI(
-    api_key=os.environ["K2THINK_API_KEY"],
-    base_url="https://api.k2think.ai/v1",
+    api_key=os.environ["ANTHROPIC_API_KEY"],
+    base_url="https://api.anthropic.com/v1",
 )
 ```
 
 ### Key behaviour
 
-K2 Think V2 is a chain-of-thought reasoning model. It outputs its reasoning inside `<think>...</think>` tags before the final answer. The backend receives the full output including the thinking trace — this is normal. The frontend displays only the final answer after `</think>`.
+Claude Opus is a chain-of-thought reasoning model. It outputs its reasoning inside `<think>...</think>` tags before the final answer. The backend receives the full output including the thinking trace — this is normal. The frontend displays only the final answer after `</think>`.
 
 `max_tokens` must be set high enough (≥ 500) for the model to finish its reasoning chain. The backend uses 1024–1600 depending on the task.
 
 ### Priority order
 
 ```
-K2THINK_API_KEY set → K2Think (default)
+ANTHROPIC_API_KEY set → Claude Opus (default)
 gemini-2 requested  → Gemini (explicit override)
 neither             → OpenAI fallback
 ```
@@ -100,7 +100,7 @@ neither             → OpenAI fallback
 
 ### What it does
 
-Gemini is the secondary LLM option. It is faster and cheaper than K2Think for tasks that don't require deep reasoning chains. It handles the same endpoints as K2Think when selected.
+Gemini is the secondary LLM option. It is faster and cheaper than Claude Opus for tasks that don't require deep reasoning chains. It handles the same endpoints as Claude Opus when selected.
 
 ### How it is wired
 
@@ -158,7 +158,7 @@ CREATE TABLE IF NOT EXISTS ghostdraft_audit_log (
     timestamp     DateTime,
     kind          String,          -- 'complete', 'dataset.query', 'mcp.dispatch'
     route         String,          -- 'abstract_extractable', 'dp_tolerant', 'local_only'
-    model         String,          -- 'k2thinkv2', 'gemini-2', etc.
+    model         String,          -- 'claude-opus-4', 'gemini-2', etc.
     entities_count UInt32,         -- number of entities proxied
     epsilon_spent  Float64,        -- DP budget consumed this call
     status        String,          -- 'ok', 'canary_leak', 'error'
@@ -184,7 +184,7 @@ insert_audit_record(
     request_id=audit_id,
     kind="complete",
     route=route_path,
-    model=req.model or "k2thinkv2",
+    model=req.model or "claude-opus-4",
     entities_count=entities_count,
     status="ok",
     blocked=False,
@@ -407,8 +407,8 @@ call_openai(prompt, system, task, requested_model, max_tokens, json_mode)
     │       YES → call_gemini(prompt, system, ...) wrapped in LLMSpan
     │       NO  → continue
     │
-    ├── 3. k2think_configured()?
-    │       YES → OpenAI client at api.k2think.ai/v1, model=MBZUAI-IFM/K2-Think-v2
+    ├── 3. anthropic_configured()?
+    │       YES → OpenAI client at api.anthropic.com/v1, model=claude-opus-4
     │       NO  → OpenAI client at api.openai.com, model from env
     │
     ├── 4. LLMSpan.__enter__() — start timer
@@ -455,9 +455,9 @@ All variables live in the root `.env` file (never committed).
 
 | Variable | Service | Required | Description |
 |----------|---------|----------|-------------|
-| `K2THINK_API_KEY` | K2Think | Yes (primary LLM) | IFM API key, format `IFM-...` |
-| `K2THINK_BASE_URL` | K2Think | No | Default: `https://api.k2think.ai/v1` |
-| `K2THINK_MODEL` | K2Think | No | Default: `MBZUAI-IFM/K2-Think-v2` |
+| `ANTHROPIC_API_KEY` | Claude Opus | Yes (primary LLM) | Anthropic API key, format `sk-ant-...` |
+| `ANTHROPIC_BASE_URL` | Claude Opus | No | Default: `https://api.anthropic.com/v1` |
+| `ANTHROPIC_MODEL` | Claude Opus | No | Default: `claude-opus-4` |
 | `GEMINI_API_KEY` | Gemini | Yes (for gemini-2 option) | Google AI Studio key, format `AIza...` |
 | `GEMINI_MODEL` | Gemini | No | Default: `gemini-2.5-flash` |
 | `CLICKHOUSE_HOST` | ClickHouse | Yes (for audit DB) | Full hostname, e.g. `abc.us-central1.gcp.clickhouse.cloud` |
@@ -481,13 +481,13 @@ All variables live in the root `.env` file (never committed).
 
 ## 10. Verifying Each Integration
 
-### K2Think
+### Claude Opus
 
 ```bash
-curl -s -X POST "https://api.k2think.ai/v1/chat/completions" \
-  -H "Authorization: Bearer $K2THINK_API_KEY" \
+curl -s -X POST "https://api.anthropic.com/v1/chat/completions" \
+  -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
   -H "Content-Type: application/json" \
-  -d '{"model":"MBZUAI-IFM/K2-Think-v2","messages":[{"role":"user","content":"Reply: OK"}],"max_tokens":50}'
+  -d '{"model":"claude-opus-4","messages":[{"role":"user","content":"Reply: OK"}],"max_tokens":50}'
 # Expected: HTTP 200, content contains "OK"
 ```
 
@@ -537,7 +537,7 @@ curl -s "https://trrybvwjblmkznphdxpb.supabase.co/auth/v1/settings" \
 ```bash
 curl -s -X POST http://localhost:8000/api/complete \
   -H "Content-Type: application/json" \
-  -d '{"document":"Subject 04-0023 received BMS-986253 at 50mg. Grade 3 AE on day 14.","prompt":"Summarize.","model":"k2thinkv2"}' \
+  -d '{"document":"Subject 04-0023 received BMS-986253 at 50mg. Grade 3 AE on day 14.","prompt":"Summarize.","model":"claude-opus-4"}' \
   | python3 -c "import sys,json; d=json.load(sys.stdin); print('route:', d['routing']['path'], '| entities:', d['entities_proxied'])"
 # Expected: route: abstract_extractable | entities: 4+
 
