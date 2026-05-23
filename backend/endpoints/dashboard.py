@@ -8,7 +8,7 @@ from collections import Counter
 from datetime import datetime
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, Request
 
 from backend.deps import get_budget, get_pipeline
 from backend.openai_demo import call_openai, openai_configured
@@ -321,8 +321,9 @@ async def generate_dashboard(
 
     if openai_configured():
         system = (
-            "You are an OpenAI clinical analytics model generating live demo dashboard specs. "
-            "Use only aggregate, synthetic, placeholder-safe values. Return strict JSON only."
+            "You are a clinical analytics assistant generating dashboard specs. "
+            "Use only aggregate, synthetic, placeholder-safe values. Return strict JSON only. "
+            "No markdown fences, no explanation — pure JSON object."
         )
         try:
             cloud_text = call_openai(
@@ -335,23 +336,16 @@ async def generate_dashboard(
             spec = _parse_cloud_spec(cloud_text, audit_id)
             if spec is not None:
                 return spec
-        except Exception as exc:  # noqa: BLE001
-            raise HTTPException(
-                status_code=502,
-                detail=f"OpenAI dashboard generation failed: {type(exc).__name__}",
-            ) from exc
+        except Exception:  # noqa: BLE001 — fall back to deterministic spec on any error
+            pass
 
-        raise HTTPException(
-            status_code=502,
-            detail="OpenAI dashboard generation returned invalid dashboard JSON.",
-        )
-
+    # Pipeline fallback.
     try:
         output = pipeline.run(cloud_prompt, budget)
         spec = _parse_cloud_spec(output.final_response, audit_id)
         if spec is not None:
             return spec
-    except Exception:  # noqa: BLE001 — fall back on any pipeline error
+    except Exception:  # noqa: BLE001
         pass
 
     return _build_fallback_spec(req.prompt, audit_id)

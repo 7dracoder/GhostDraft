@@ -87,12 +87,25 @@ def call_openai(
     from backend.integrations.datadog import LLMSpan
 
     # Route to Gemini if it's configured (primary) or explicitly requested.
+    # Falls back to K2Think/OpenAI on rate limit or any Gemini error.
     from backend.integrations.gemini import call_gemini, gemini_configured
     if gemini_configured() or requested_model == "gemini-2":
-        with LLMSpan(task=task, model=resolved_model, prompt_len=len(prompt)) as span:
-            result = call_gemini(prompt, system, max_tokens=max_tokens, json_mode=json_mode)
-            span.response_len = len(result)
-            return result
+        try:
+            with LLMSpan(task=task, model=resolved_model, prompt_len=len(prompt)) as span:
+                # Gemini free tier doesn't support json_mode reliably — ask for JSON in prompt instead.
+                result = call_gemini(prompt, system, max_tokens=max_tokens, json_mode=False)
+                span.response_len = len(result)
+                return result
+        except Exception as exc:
+            err_str = str(exc).lower()
+            # On rate limit or quota exhaustion, fall through to K2Think/OpenAI.
+            if any(kw in err_str for kw in ("429", "quota", "rate", "exhausted", "resource_exhausted")):
+                print(f"[Gemini] rate limited, falling back to K2Think: {exc}")
+            elif requested_model == "gemini-2":
+                # Explicit gemini-2 request — don't silently fall back, re-raise.
+                raise
+            else:
+                print(f"[Gemini] error, falling back to K2Think: {exc}")
 
     # K2Think / OpenAI fallback path.
     client = _make_openai_client()
